@@ -1,0 +1,148 @@
+---
+title: "LAcrimedata+Covid"
+author: "Isha Ganavdiya"
+date: "2024-11-12"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+# Load libraries
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+
+# Load the data
+crime_data <- read.csv("/Users/ishaganavdiya/Downloads/Crime_Data_from_2020_to_Present.csv")
+# Convert 'Date.Rptd' to Date format, extracting only the date part
+crime_data$Date.Rptd <- mdy_hms(crime_data$Date.Rptd)
+# Extract the year from the 'Date.Rptd' column
+crime_data$Year <- year(crime_data$Date.Rptd)
+
+# Calculate annual crime counts
+annual_crime_counts <- crime_data %>%
+  group_by(Year) %>%
+  summarise(total_crimes = n())
+
+# View the results
+print(annual_crime_counts)
+```
+
+
+```{r}
+#Visualize Crime Trends Over Time
+library(ggplot2)
+
+# Plot annual crime counts
+ggplot(annual_crime_counts, aes(x = Year, y = total_crimes)) +
+  geom_line(color = "blue") +
+  geom_point() +
+  labs(title = "Annual Crime Counts in Los Angeles (2020-2024)",
+       x = "Year",
+       y = "Total Crimes") +
+  theme_minimal()
+```
+```{r}
+
+# Load libraries
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+library(zoo) 
+
+#Load COVID-19 Case Data
+covid_data <- read.csv("/Users/ishaganavdiya/Downloads/LA_County_COVID_Cases.csv")
+
+# Display the first few rows of covid_data
+head(covid_data)
+# Convert the 'date' column to Date format using the correct format string
+covid_data$date <- as.Date(covid_data$date, format = "%m/%d/%Y %I:%M:%S %p")
+
+# Extract Year and Month to create YearMonth column
+covid_data$YearMonth <- format(covid_data$date, "%Y-%m")
+
+# Aggregate COVID data by YearMonth (sum of cases and deaths per month)
+covid_monthly_data <- covid_data %>%
+  group_by(YearMonth) %>%
+  summarise(
+    total_cases = sum(cases, na.rm = TRUE),
+    total_deaths = sum(deaths, na.rm = TRUE),
+    total_new_cases = sum(new_cases, na.rm = TRUE),
+    total_new_deaths = sum(new_deaths, na.rm = TRUE)
+  )
+
+# Check the aggregated COVID data
+head(covid_monthly_data)
+
+# Find peak months for COVID cases and deaths
+peak_covid_months <- covid_monthly_data %>%
+  arrange(desc(total_new_cases)) %>%
+  slice_head(n = 5)  # Select top 5 months with highest new cases
+
+peak_covid_months
+
+
+# Filter crime data for 2020 and 2021
+crime_data_2020_2021 <- crime_data %>%
+  filter(format(Date.Rptd, "%Y") %in% c("2020", "2021"))
+
+# Aggregate crime data by YearMonth
+crime_monthly_data <- crime_data_2020_2021 %>%
+  group_by(YearMonth) %>%
+  summarise(total_crimes = n())
+
+# Check the aggregated crime data
+head(crime_monthly_data)
+
+
+# Merge COVID and crime data by 'YearMonth'
+merged_data <- merge(crime_monthly_data, covid_monthly_data, by = "YearMonth", all = TRUE)
+
+# Remove rows with NA in 'YearMonth' column
+merged_data <- merged_data %>%
+  filter(!is.na(YearMonth))
+
+# Check the merged data
+head(merged_data)
+
+
+# Ensure YearMonth data is consistent across both datasets
+merged_data <- merged_data %>%
+  filter(!is.na(total_new_cases) & !is.na(total_crimes))  # Remove rows with NA values
+
+# Calculate the correlation between COVID-19 new cases and total crimes
+correlation_new_cases_crimes <- cor(merged_data$total_new_cases, merged_data$total_crimes, use = "complete.obs")
+
+# Calculate the correlation between COVID-19 new deaths and total crimes
+correlation_new_deaths_crimes <- cor(merged_data$total_new_deaths, merged_data$total_crimes, use = "complete.obs")
+
+# Display the correlation results
+correlation_new_cases_crimes
+correlation_new_deaths_crimes
+
+```
+
