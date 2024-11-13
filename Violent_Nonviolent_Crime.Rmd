@@ -11,29 +11,25 @@ knitr::opts_chunk$set(echo = TRUE)
 ## R Markdown
 
 
-
 ```{r}
 
 # read in CSV as data frame
-crime_data <- read.csv("/Users/sarahmirza/Desktop/QBS181/final_project/Crime_Data_from_2020_to_Present.csv")
+crime_data <- read.csv("/Users/sarahmirza/Documents/GitHub/LA-Crime-Data/Crime_Data_from_2020_to_Present.csv")
 
 ```
+
 
 ```{r}
 # preview the crime data frame 
 head(crime_data)
 ```
 
-
-## Plotting library
-
+Plotting library
 
 ```{r}
 library(ggplot2)
 ```
 
-
-Classify categories of violent crimes and analyze their geographic distribution to identify regions in Los Angeles with the highest rates of these crimes.
 
 ```{r}
 #hist(crime_data$TIME.OCC)
@@ -41,9 +37,10 @@ Classify categories of violent crimes and analyze their geographic distribution 
 
 #hist(crime_data$Crm.Cd)
 
-crime_by_region <- data.frame(xtabs(~AREA.NAME+Crm.Cd, crime_data))
+# data frame containing the frequency of each crime committed per area
+crime_by_region <- data.frame(xtabs(~AREA.NAME+Crm.Cd, crime_data)) 
 
-head(crime_by_region)
+head(crime_by_region) # preview data frame
 
 
 ```
@@ -80,24 +77,28 @@ Classify categories of non-violent crime and analyze their geographic distributi
 
 
 ```{r}
-violent_crime_codes <- c(110,113,121,122,815,820,821,210,220,230,231,235,236,250,251,761,926,435,436,437,622,623,624,625,626,627,647,763,928,930)
+violent_crime_codes <- c(110,113,121,122,815,820,821,210,220,230,231,235,236,250,251,761,926,435,436,437,622,623,624,625,626,627,647,763,928,930) # violent crime codes in a list
 ```
 
 ```{r}
+# if the main crime code matches a value in the violent crimes list, add it to violent crimes data frame
 violent_crimes <- crime_data[crime_data$Crm.Cd %in% violent_crime_codes,]
-head(violent_crimes)
+head(violent_crimes) 
 
-non_violent_crimes <- crime_data[!crime_data$Crm.Cd %in% violent_crime_codes]
+# if the main crime code does not match a value in the violent crimes list, add it to nonviolent crimes data frame
+non_violent_crimes <- crime_data[!crime_data$Crm.Cd %in% violent_crime_codes,]
 head(non_violent_crimes)
 ```
 
 ```{r}
-violent_crimes_table <- table(violent_crimes$AREA.NAME)
+# pie chart to show violent crime distribution in LA
+violent_crimes_table <- table(violent_crimes$AREA.NAME)  # add all the area names from the violent crimes data frame
 
-violent_crimes_sorted <- sort(violent_crimes_table,decreasing=TRUE)
+violent_crimes_sorted <- sort(violent_crimes_table,decreasing=TRUE) # sort table by most crimes first
 
 #View(violent_crimes_top10)
 
+# display pie chart based on data
 violent_pie <- pie(violent_crimes_sorted,
     main = "Crimes by Area",
     col = rainbow(length(violent_crimes_sorted)),
@@ -106,10 +107,12 @@ violent_pie <- pie(violent_crimes_sorted,
 #head(violent_crimes_sorted)
 ```
 ```{r}
-nonviolent_crimes_table <- table(non_violent_crimes$AREA.NAME)
+# pie chart of non violent crimes
+nonviolent_crimes_table <- table(non_violent_crimes$AREA.NAME) # add all area names from nonviolent crime data frame
 
-nonviolent_crimes_sorted <- sort(nonviolent_crimes_table,decreasing=TRUE)
+nonviolent_crimes_sorted <- sort(nonviolent_crimes_table,decreasing=TRUE) # sort in decrementing order
 
+# create pie chart based on nonviolent crimes
 nonviolent_pie <- pie(nonviolent_crimes_sorted,
     main = "Crimes by Area",
     col = rainbow(length(nonviolent_crimes_sorted)),
@@ -119,61 +122,58 @@ nonviolent_pie <- pie(nonviolent_crimes_sorted,
 ```
 
 ```{r}
-library(dplyr)
+library(dplyr) # for filtering
 
-violent_by_area <- violent_crimes %>%
+# count the number of times each area occurs in the violent crime data frame
+violent_by_area <- violent_crimes %>% 
   count(AREA.NAME) %>%                     
-  arrange(desc(n))    
+  arrange(desc(n))  # sort by most crime  
 
 #violent_by_area
 
+# count the number of times each area occurs in the nonviolent crime data frame
 nonviolent_by_area <- non_violent_crimes %>%
   count(AREA.NAME) %>%
-  arrange(desc(n))
+  arrange(desc(n)) # sort by highest crime rate
 
 #nonviolent_by_area
 
+# add new column to classify crime type for merging
 violent_by_area$Type <- "Violent Crime"
 nonviolent_by_area$Type <- "Nonviolent Crime"
 
+# assign column names
 colnames(violent_by_area) <- c("Area","Crimes","Type")
 colnames(nonviolent_by_area) <- c("Area","Crimes","Type")
 
+# negate all the nonviolent crime totals for flipped graph
 nonviolent_by_area$Crimes <- -nonviolent_by_area$Crimes
 
-
+# combine data frames
 crimes_by_area <- rbind(violent_by_area,nonviolent_by_area)
 
-#crimes_by_area
+#head(crimes_by_area)
 
+#sort by the order they appear in their data frames (sorted by decreasing frequency)
 crimes_by_area$Area <- factor(crimes_by_area$Area, levels = unique(crimes_by_area$Area))
+
+head(crimes_by_area)
 ```
 
 ```{r}
-ggplot(crimes_by_area, aes(x = Area, y = Crimes, fill = Type)) +
-  geom_bar(stat = "identity",width=0.5) +
-  coord_flip() +
+# crime frequency plot 
+crime_freq_plot <- ggplot(crimes_by_area, aes(x = Area, y = Crimes, fill = Type)) +
+  geom_bar(stat = "identity",width=0.5) + # bar chart
+  coord_flip() + # flip x and y axis 
   labs(title = "Crime Frequency by Area",
        x = "Area in Los Angeles",
        y = "Frequency") +
-  #theme_minimal() +
+  theme_minimal() +
   scale_y_continuous(labels = abs) +
-  scale_fill_manual(values = c("Violent Crime" = "firebrick", "Nonviolent Crime" = "mediumpurple4"))
+  scale_fill_manual(values = c("Violent Crime" = "firebrick", "Nonviolent Crime" = "purple4"))
+crime_freq_plot
+ggsave("CrimeFrequency.png",plot=crime_freq_plot) # save plot
 
-```
-
-
-```{r}
-# Create a base plot using the cdat data frame. We will call this base plot `cdat_sp` (for cdat scatter plot)
-violent_balloon <- ggplot(violent_crimes, aes(x = AREA.NAME, y = Crm.Cd, size = AREA)) +
-    geom_point(shape = 21, colour = "black", fill = "cornsilk")
-
-# GDP mapped to radius (default with scale_size_continuous)
-violent_balloon
-
-# GDP mapped to area instead, and larger circles
-violent_balloon +
-  scale_size_area(max_size = 15)
 ```
 
 
