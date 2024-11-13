@@ -1,0 +1,225 @@
+---
+title: "AIM 1 Crime Trends"
+author: "Deepthi Gangiredla"
+output: pdf_document
+---
+
+
+**In this section, we will examine the characteristics of crime victims and analyze how these traits align with the cities that have the highest crime rates. By exploring this connection, we hope to better understand the factors contributing to crime in these areas and identify potential patterns. **
+
+
+```{r}
+# load libraries 
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(ranger)
+
+#load data set 
+crime_data <- read.csv("Crime_Data_from_2020_to_Present.csv")
+head(crime_data) 
+```
+
+
+Clean data and extract names of the top 10 cities with the highest crime in the dataset
+```{r}
+
+# create dictionary for all ethnicity and their codes in the crime data
+ethnicity_dict <- c(
+  "A" = "Other Asian",
+  "B" = "Black",
+  "C" = "Chinese",
+  "D" = "Cambodian",
+  "F" = "Filipino",
+  "G" = "Guamanian",
+  "H" = "Hispanic/Latin/Mexican",
+  "I" = "American Indian/Alaskan Native",
+  "J" = "Japanese",
+  "K" = "Korean",
+  "L" = "Laotian",
+  "O" = "Other",
+  "P" = "Pacific Islander",
+  "S" = "Samoan",
+  "U" = "Hawaiian",
+  "V" = "Vietnamese",
+  "W" = "White",
+  "X" = "Unknown",
+  "Z" = "Asian Indian"
+)
+
+# Add ethnicity column that maps to ethnicity code 
+crime_data <- crime_data %>%
+  mutate(Ethnicity = ethnicity_dict[Vict.Descent])
+
+
+#Get count of how many crimes are documented for each area
+crime_top<-crime_data %>% 
+    count(AREA.NAME, sort = TRUE, name= "crime_count") %>%
+    arrange(desc(crime_count))
+
+
+# get table of top 10 areas of crime and number of crimes total per area
+top_10_area <- head(crime_top,10)
+top_10_area
+```
+
+It appears the Central, 77th Street, Pacific, Southwest, Hollywood, N Hollywood, Southeast, Olympic, Newton, Wilshire area in LoS Angeles have the highest rate of crime. 
+```{r}
+#plot top 10 areas and count
+ggplot(top_10_area, aes(x = reorder(AREA.NAME, Area_frequency), y = Area_frequency)) +
+   geom_bar(stat = "identity", fill = "purple4") +  
+   labs(x = "Area", y = "Total Crime Count", title = "Total Number of Crimes by Top 10 Areas with High Crime Rates") +  
+   theme_classic(base_size = 12) + 
+   theme(axis.text.x = element_text(angle = 45, hjust = 1), 
+         legend.position = "none")
+
+```
+In this plot we can visually see the distribution of total crimes across the top 10 area. 
+
+```{r}
+# Filter crime table to only include data from top 10 areas with highest crime count
+crime_top_10 <-crime_data[crime_data$AREA.NAME %in% c(top_10_area$AREA.NAME), ]
+```
+
+**VICTIM  ETHNICITY**
+
+In high crime areas, how is the distribution of crime victims by ethinicities? Is one ethnicity more frequently targeted than the other? To explore these questions, we can use the code below:
+```{r}
+# Summarize the data by counting the occurrences of each ethnicity
+ethnicity_table <- table(crime_top_10$Ethnicity)
+
+# Convert the table into a data frame
+ethnicity_df <- data.frame(
+  Ethnicity = names(ethnicity_table),
+  Count = as.vector(ethnicity_table)
+)
+
+# Calculate percentages for each ethnicity group
+ethnicity_df$Percentage <- round((ethnicity_df$Count / sum(ethnicity_df$Count)) * 100, 1)
+
+# Group ethnicity with less than 2% into the "Other" category
+ethnicity_df$Ethnicity <- ifelse(ethnicity_df$Percentage < 2, "Other", ethnicity_df$Ethnicity)
+
+# Recalculate percentages
+ethnicity_df <- ethnicity_df %>%
+  group_by(Ethnicity) %>%
+  summarize(Count = sum(Count)) %>%
+  mutate(Percentage = round((Count / sum(Count)) * 100, 1))
+
+
+# Create a pie chart that shows distribution of victim ethnicity across top 10 high crime rate cites 
+labels <- paste(ethnicity_df$Ethnicity, " (", ethnicity_df$Percentage, "%)", sep = "")
+pie(ethnicity_df$Count, labels = labels,
+    col = c("purple", "purple4", "violet", "plum","lavender", "orchid"),
+    main = "Ethnicity Distribution in Crime Data")
+
+
+```
+This pie chart shows that in Los Angeles, the majority of crime victims are Hispanic/Latino/Mexican. The next two largest groups are Black and White victims.
+
+
+**VICTIM  SEX**
+In high-crime areas, how is the distribution of crime victims by sex? Is one sex more frequently targeted than the other? To explore these questions, we can use the code below
+```{r}
+
+#table(crime_data[crime_data$AREA.NAME == "Central",])
+sex_table <-table(crime_top_10 [, "Vict.Sex"])
+unique(crime_top_10$Vict.Sex)
+
+collapsed_table_sex <- c(
+  Female = sex_table["F"],  # F = Female
+  Male = sex_table["M"],    # M = Male
+  Other = sum(sex_table[c("H", "X")] ) )
+names(collapsed_table_sex) <- c("Female", "Male","Unspecified")
+
+
+# create percentage of sex ratios 
+total_count <- sum(collapsed_table_sex)
+percentages <- round((collapsed_table_sex / total_count) * 100, 1)  # Round to 1 decimal place
+
+# Create the pie chart for the sex distribution
+pie(collapsed_table_sex, 
+    main = "Distribution of Victim Sex", 
+    col = c( "violet","purple4","lavender"), 
+    labels = paste(names(collapsed_table_sex), " (",percentages,"%)"), 
+  radius = 1)
+```
+Based on the pie chart above, it appears that the majority of crimes are committed against men, though the difference is relatively small. This indicates that, overall, the sex ratio of crime victims is fairly balanced.
+
+
+**VICTIM  AGE**
+
+In high-crime areas, how is the distribution of crime victims by age? Is one age group more frequently targeted than the other? To explore these questions, we can use the code below
+```{r}
+
+# define age groups 
+age_groups <- cut(crime_top_10$Vict.Age, 
+                  breaks = c(0, 10, 20, 30, 40, 50, 60, 70, 75, Inf), 
+                  right = TRUE,  
+                  labels = c("0-10", "11-20", "21-30", "31-40", "41-50", "51-60", "61-70", "71-75", "75+"))
+
+#frequency table of the age groups
+age_group_table <- table(age_groups)
+
+# convert the table into a data frame for ggplot
+age_group_df <- data.frame(
+  AgeGroup = names(age_group_table),
+  Count = as.vector(age_group_table)
+)
+
+#add percentages for plot
+age_group_df$Percentage <- round((age_group_df$Count / sum(age_group_df$Count)) * 100, 1)
+
+# Create a pie chart that shows distribution of victim age groups across top 10 high crime rate cites 
+labels <- paste(age_group_df$AgeGroup, " (", age_group_df$Percentage, "%)", sep = "")
+pie(age_group_df$Count, labels = labels,
+    col = c("purple", "purple4", "violet", "plum","lavender", "orchid"),
+    main = "Age Groups of Victims",cex=0.7,radius = 1)
+
+```
+Based on the pie chart above, it appears that the majority of crimes are committed against individuals in the 21-30 age group, with the second largest group of victims falling within the 31-40 age range. This suggests that younger adults are more frequently targeted, followed by those in early middle age.
+
+
+**CRIME FEATURE ANALYSIS**
+
+Next, we aim to explore which features of crimes in high-crime areas are most strongly correlated with or associated with different crime types. Do specific characteristics of the crime or the victim influence the likelihood of a particular crime occurring?"
+
+We address this question by first imputing all missing values, and then using a random forest model to conduct our feature analysis.
+```{r}
+
+# imputation  of missing data
+# Use the ethnicity group with the highest number of victims to replace missing values 
+crime_top_10$Ethnicity[is.na(crime_top_10$Ethnicity)] <- names(sort(table(crime_top_10$Ethnicity), decreasing = TRUE))[1]
+# Use the median of all victim ages to replace missing vlaues 
+crime_top_10$Age[is.na(crime_top_10$Age)] <- median(crime_top_10$Age)
+
+# convert crime type as factor
+crime_top_10$Crm.Cd.Desc <- as.factor(crime_top_10$Crm.Cd.Desc)
+
+# Fit a random forest model 
+rf_model <- ranger(Crm.Cd.Desc ~ AREA + LOCATION+Vict.Age + Vict.Sex+ TIME.OCC+ Ethnicity,  
+                   data = crime_top_10, 
+                   importance = 'impurity', 
+                   num.trees = 500)
+
+# save feature importance
+importance_values <- importance(rf_model)
+
+# put values into a data frame
+importance_df <- data.frame(
+  Feature = names(importance_values),
+  Importance = importance_values)
+
+#format features labels
+importance_df$Feature_Name <- c("Area", "Location", "Victim Age", "Victim Sex","Time of Crime" ," Victim Ethnicity")
+
+# Plot the all features and their importance to the crime type
+ggplot(importance_df, aes(x = reorder(Feature_Name, Importance), y = Importance)) +
+  geom_bar(stat = "identity", fill = "purple4") +  
+  coord_flip() + 
+  labs(title = "Crime Feature Importance from Random Forest", x = "Feature", y = "Importance") +
+  theme_minimal() 
+
+```
+This plot reveals that the top three features most strongly associated with a crime are the specific location, the victim's age, and the time of day the crime occurs. These factors appear to play an important in determining the likelihood and nature of different crime types.
+
