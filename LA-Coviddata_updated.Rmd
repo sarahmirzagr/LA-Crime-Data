@@ -1,0 +1,168 @@
+---
+title: "LAcrimedata+Covid"
+author: "Isha Ganavdiya"
+date: "2024-11-12"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+# Load libraries
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+
+# Load the data
+crime_data <- read.csv("/Users/ishaganavdiya/Downloads/Crime_Data_from_2020_to_Present.csv")
+# Convert 'Date.Rptd' to Date format, extracting only the date part
+crime_data$Date.Rptd <- mdy_hms(crime_data$Date.Rptd)
+# Extract the year from the 'Date.Rptd' column
+crime_data$Year <- year(crime_data$Date.Rptd)
+
+# Calculate annual crime counts
+annual_crime_counts <- crime_data %>%
+  group_by(Year) %>%
+  summarise(total_crimes = n())
+
+# View the results
+print(annual_crime_counts)
+```
+
+
+
+```{r}
+# Load necessary library
+library(ggplot2)
+
+# Filter out the year 2024 from the data
+annual_crime_counts_filtered <- annual_crime_counts %>%
+  filter(Year < 2024)
+
+# Plot annual crime counts excluding 2024
+ggplot(annual_crime_counts_filtered, aes(x = Year, y = total_crimes)) +
+  geom_line(color = "purple") +
+  geom_point(color = "purple") +
+  labs(
+    title = "Annual Crime Counts in Los Angeles (2020-2023)",
+    x = "Year",
+    y = "Total Crimes"
+  ) +
+  theme_minimal()
+```
+
+
+```{r}
+#Load COVID-19 Case Data
+covid_data <- read.csv("/Users/ishaganavdiya/Downloads/LA_County_COVID_Cases.csv")
+colnames(covid_data)
+# Load libraries
+library(dplyr)
+library(lubridate)
+
+# Convert 'date' column to Date format
+covid_data$date <- mdy_hms(covid_data$date)
+
+# Sort data by date (if it's not sorted)
+covid_data <- covid_data %>% arrange(date)
+
+# Calculate new cases by subtracting the previous day's cumulative cases from the current day's cases
+covid_data <- covid_data %>%
+  mutate(new_cases = cases - lag(cases, default = first(cases))) %>%
+  mutate(new_deaths = deaths - lag(deaths, default = first(deaths)))
+
+# Add Year column
+covid_data$Year <- year(covid_data$date)
+
+# Group by Year and calculate total new cases and new deaths for each year
+annual_covid_counts <- covid_data %>%
+  group_by(Year) %>%
+  summarise(
+    total_new_cases = sum(new_cases, na.rm = TRUE),
+    total_new_deaths = sum(new_deaths, na.rm = TRUE)
+  )
+
+# View the results
+print(annual_covid_counts)
+
+```
+
+```{r}
+# Load necessary libraries
+library(ggplot2)
+
+# Create a data frame for total new cases and deaths
+covid_data <- data.frame(
+  Year = c(2020, 2021, 2022, 2023),
+  total_new_cases = c(828084, 950605, 1860711, 69721),
+  total_new_deaths = c(10826, 16819, 7085, 789)
+)
+
+# Plot only the trend line for total new cases in pink
+ggplot(covid_data, aes(x = Year, y = total_new_cases)) +
+  geom_smooth(method = "lm", color = "pink", se = FALSE) +  # Trend line in pink
+  labs(title = "Trend of Total New COVID Cases (2020-2023)",
+       x = "Year",
+       y = "Total New Cases") +
+  theme_minimal()
+```
+```{r}
+library(zoo)
+
+# Interpolate missing values for 'total_new_cases'
+merged_data$total_new_cases <- na.approx(merged_data$total_new_cases, na.rm = FALSE)
+head(merged_data %>% filter(Year < 2024))
+summary(merged_data %>% filter(Year < 2024))
+  
+ggplot(merged_data %>% filter(Year < 2024), aes(x = Year)) +
+  # Crime data (primary y-axis) with log scale if needed
+  geom_line(aes(y = total_crimes, color = "Crime Trend"), size = 1) +
+  # COVID data (secondary y-axis)
+  geom_line(aes(y = total_new_cases, color = "COVID Trend"), size = 1, linetype = "dashed") +
+  scale_color_manual(values = c("Crime Trend" = "purple", "COVID Trend" = "pink")) +
+  labs(title = "Crime vs COVID Trends in Los Angeles (2020-2023)", 
+       x = "Year", 
+       y = "Crime Count", 
+       color = "Legend") +
+  scale_y_continuous(name = "Crime Count", 
+                     limits = c(0, max(merged_data$total_crimes, na.rm = TRUE)), 
+                     trans = "log") +  # Optional: use log scale for crime data
+  scale_y_continuous(sec.axis = sec_axis(~ ., name = "COVID New Cases")) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+merged_data %>%
+  filter(Year %in% c(2020, 2021)) %>%
+  select(Year, total_crimes, total_new_cases)
+
+# Calculate correlation between total crimes and total new cases for 2020 and 2021
+correlation_result <- cor(merged_data$total_crimes, merged_data$total_new_cases, use = "complete.obs")
+correlation_result
+```
+
+
+
+
