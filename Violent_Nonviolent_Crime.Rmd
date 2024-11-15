@@ -64,6 +64,7 @@ non_violent_crimes <- crime_data[!crime_data$Crm.Cd %in% violent_crime_codes,]
 head(non_violent_crimes)
 ```
 ## Pie Charts
+For both the nonviolent and violent data frames, create tables to track the number of occurrences in their respective data frames. Sort them, then plot them in a pie chart to show how much each area contributes to the types of crimes that occur in Los Angeles. 
 
 ```{r}
 # pie chart to show violent crime distribution in LA
@@ -81,6 +82,8 @@ violent_pie <- pie(violent_crimes_sorted,
 
 #head(violent_crimes_sorted)
 ```
+
+
 ```{r}
 # pie chart of non violent crimes
 nonviolent_crimes_table <- table(non_violent_crimes$AREA.NAME) # add all area names from nonviolent crime data frame
@@ -95,7 +98,9 @@ nonviolent_pie <- pie(nonviolent_crimes_sorted,
 
 #nonviolent_crimes_sorted
 ```
+
 ## Frequency Distribution Graph
+Use the dplyr library to filter the data by counting the frequency and ordering the data to have highest number of occurrences first. The data frames should now show how often each type of crime is committed per precinct. Add a new column to each data frame indicating the type of crime and negate the frequencies on the nonviolent data frame. Bind the data frames together. Sort the data frames so they appear in the order that they occurred in their respective data frames-sorted in decreasing frequency.
 
 ```{r}
 library(dplyr) # for filtering
@@ -136,6 +141,7 @@ crimes_by_area$Area <- factor(crimes_by_area$Area, levels = unique(crimes_by_are
 head(crimes_by_area)
 ```
 
+Create a bar chart flipped on its access to show the distribution of crimes. Nonviolent crime crime will be represented with negative values and the violent crimes will be represented with positive values. The crimes will be ordered by least violent crimes to most violent crimes from top to bottom. The y-axis will represent every area in LA, once the coordinates are flipped. Red will indicate violent crime and nonviolent will be in purple. Save the plot. 
 ```{r}
 # crime frequency plot 
 crime_freq_plot <- ggplot(crimes_by_area, aes(x = Area, y = Crimes, fill = Type)) +
