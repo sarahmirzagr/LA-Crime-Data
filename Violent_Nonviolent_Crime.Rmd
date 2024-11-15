@@ -1,5 +1,6 @@
 ---
 title: "final_181"
+author: "Sarah Mirza"
 output: html_document
 date: "2024-10-24"
 ---
@@ -10,27 +11,27 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Violent and Nonviolent Crime Graphs
 
-
+First, read in the CSV file. Reading in the CSV file is in its own cell as it is a relatively large file and reducing the amount of times it must be read in can significantly reduce time, storage, and cost.
 ```{r}
 
 # read in CSV as data frame
 crime_data <- read.csv("/Users/sarahmirza/Documents/GitHub/LA-Crime-Data/Crime_Data_from_2020_to_Present.csv")
-
 ```
 
-
+Preview the data in its own cell to avoid excessively reading in the CSV. Going forward we will use the data frame to do our further analyses. 
 ```{r}
 # preview the crime data frame 
 head(crime_data)
 ```
 
-Plotting library
+Load in the required plotting library, ggplot2.
 
 ```{r}
 library(ggplot2)
 ```
 
 
+Create a frequency table to see which areas have the highest rates of crime. Using base R, xtabs will count the frequency of how many times each area has had a specific primary crime code. To do this, select the columns you want using a tilde followed by a + to cross reference the columns, then after the comma, provide the data frame you would like to use. For ease of use, typecast the xtabs table to a data frame for viewing and further analyses. 
 ```{r}
 #hist(crime_data$TIME.OCC)
 
@@ -45,41 +46,14 @@ head(crime_by_region) # preview data frame
 
 ```
 
-In California, **violent felonies** are specifically enumerated in **Penal Code Section 667.5(c)**. These offenses are considered particularly severe and carry enhanced sentencing provisions. The list includes:
-
-- **Murder or voluntary manslaughter** (Penal Code §187, §192)
-- **Mayhem** (Penal Code §203)
-- **Rape** as defined in specific subdivisions of Sections 261 and 262
-- **Sodomy** as defined in subdivisions of Section 286
-- **Oral copulation** as defined in subdivisions of Section 287
-- **Lewd acts on a child under 14 years** (Penal Code §288)
-- **Any felony punishable by death or life imprisonment**
-- **Any felony** where the defendant inflicts great bodily injury on someone other than an accomplice
-- **Robbery** (Penal Code §211)
-- **Arson** in violation of subdivisions (a) or (b) of Section 451
-- **Sexual penetration** as defined in subdivisions of Section 289
-- **Attempted murder** (Penal Code §664/187)
-- **Kidnapping** (Penal Code §207)
-- **Assault with intent to commit a specified felony** (Penal Code §220)
-- **Continuous sexual abuse of a child** (Penal Code §288.5)
-- **Carjacking** (Penal Code §215)
-- **Rape, spousal rape, or sexual penetration in concert** (Penal Code §264.1)
-- **Extortion** as defined in Section 518, constituting a felony violation of Section 186.22
-- **Threats to victims or witnesses** as defined in Section 136.1, constituting a felony violation of Section 186.22
-- **First-degree burglary** where another person, other than an accomplice, was present during the commission
-- **Any violation of Section 12022.53** (pertaining to firearm enhancements)
-- **Violations related to weapons of mass destruction** as specified in subdivisions (b) or (c) of Section 11418
-
-For a comprehensive list and detailed definitions, refer to the California Legislative Information website.  
-
-
-Classify categories of non-violent crime and analyze their geographic distribution to identify regions in Los Angeles with the highest rates of these crimes.
-
-
+**Classify categories of non-violent crime and analyze their geographic distribution to identify regions in Los Angeles with the highest rates of these crimes.** 
+Create a list of violent crime codes as determined by the Los Angeles Police Department. 
 ```{r}
 violent_crime_codes <- c(110,113,121,122,815,820,821,210,220,230,231,235,236,250,251,761,926,435,436,437,622,623,624,625,626,627,647,763,928,930) # violent crime codes in a list
 ```
 
+
+Go through the crime_data data frame and determine whether the primary crime code is found in the violent crimes list, or not, and add the crime data row to new, respective data frames-one for violent crimes and one for nonviolent crimes.
 ```{r}
 # if the main crime code matches a value in the violent crimes list, add it to violent crimes data frame
 violent_crimes <- crime_data[crime_data$Crm.Cd %in% violent_crime_codes,]
@@ -89,6 +63,7 @@ head(violent_crimes)
 non_violent_crimes <- crime_data[!crime_data$Crm.Cd %in% violent_crime_codes,]
 head(non_violent_crimes)
 ```
+## Pie Charts
 
 ```{r}
 # pie chart to show violent crime distribution in LA
@@ -120,6 +95,7 @@ nonviolent_pie <- pie(nonviolent_crimes_sorted,
 
 #nonviolent_crimes_sorted
 ```
+## Frequency Distribution Graph
 
 ```{r}
 library(dplyr) # for filtering
