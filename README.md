@@ -1,6 +1,6 @@
 Aim1.Rmd-  Examination of characteristics of crime victims and crime event features, and analysis of how these traits align with areas of high crime. 
 
-LA-Coviddata.Rmd
+LA-Coviddata.Rmd- Cross analysis of COVID data compared to crime rate in Los Angeles county. 
 
 Violent_Nonviolent_Crime.Rmd - graphical analysis of nonviolent and violent crime frequency in 21 different areas in LA.
 
