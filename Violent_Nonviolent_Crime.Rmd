@@ -1,8 +1,10 @@
 ---
 title: "final_181"
 author: "Sarah Mirza"
-output: html_document
 date: "2024-10-24"
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
