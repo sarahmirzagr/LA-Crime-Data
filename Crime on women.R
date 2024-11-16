@@ -1,4 +1,6 @@
-# Joana Lame
+# title: Crime on Women
+# author: Joana Lame
+# date: 14/10/2024
 
 # A prominent perception around crime in LA City is that crime on women does not
 # affect specific cohorts; on the contrary, it crosses geographic and income
@@ -114,18 +116,17 @@ female_victims <- Crime_Data_from_2020_to_Present %>%
 # total_crime can be used. The following code is another alternative: 
 
 area_sums_f <- numeric(21)  #Create an empty vector to store the results
-
 area_codes_f <- sprintf("%02d", 1:21) #Create a vector for area names.
 
 for (i in 1:21) {   # loop through each area code from "01" to "21"
   area_code <- sprintf("%02d", i)  # area code as "01", "02", ..., "21"
-  
   area_sums_f[i] <- sum(female_victims$AREA == area_code)
 }   # calculate sum of the rows where AREA matches the current area code
 
 area_df_f <- data.frame(Area = area_codes_f, Crime_on_women = area_sums_f)
 
 crimes_against_women <- merge(Areas, area_df_f, by.x = "AREA", by.y = "Area", all.x = TRUE)
+
 
 # Join the crime data with the shapefile (again, not necessary for mapping)
 #la_crime_data <- shapefile %>%
@@ -154,7 +155,6 @@ ggplot(data = shapefile) +
     panel.grid = element_blank()           # remove gridlines
   ) +
   coord_sf(expand = FALSE)  # remove unnecessary padding around the map
-
 
 
 #--------------------------------------------------------
