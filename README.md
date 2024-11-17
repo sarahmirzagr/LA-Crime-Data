@@ -1,4 +1,4 @@
-Aim1.Rmd-  Examination of characteristics of crime victims and crime event features, and analysis of how these traits align with areas of high crime. 
+Aim1.Rmd/PDF-  Examination of characteristics of crime victims and crime event features, and analysis of how these traits align with areas of high crime. 
 
 LA-Coviddata.Rmd- Cross analysis of COVID data compared to crime rate in Los Angeles county. 
 
